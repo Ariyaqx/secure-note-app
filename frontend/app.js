@@ -5,6 +5,15 @@ const API_URL = 'http://localhost:3000/api/notes';
 const SECRET_TOKEN = 'my_super_secret_token_12345'; // ต้องตรงกับในไฟล์ .env ของ Backend
 
 async function loadNotes() {
+  const notesContainer = document.getElementById('notesContainer');
+  
+  // 1. แสดงข้อความ/แอนิเมชัน Loading ก่อนเริ่ม Fetch
+  notesContainer.innerHTML = `
+    <div style="text-align: center; width: 100%; grid-column: 1 / -1; padding: 3rem;">
+      <h2 style="color: var(--brand-color);">⏳ กำลังโหลดข้อมูลโน้ตของคุณ...</h2>
+    </div>
+  `;
+
   try {
     const response = await fetch(API_URL);
     if (!response.ok) {
@@ -21,31 +30,36 @@ async function loadNotes() {
 }
 
 async function saveNote(event) {
-  event.preventDefault()
+  event.preventDefault();
 
   const title = document.getElementById('noteTitle').value.trim();
   const content = document.getElementById('noteContent').value.trim();
 
+  // ตรวจสอบว่าเป็นโหมดแก้ไข (มี editingNoteId) หรือโหมดสร้างใหม่ (null)
+  const isEditMode = editingNoteId !== null;
+  const url = isEditMode ? `${API_URL}/${editingNoteId}` : API_URL;
+  const method = isEditMode ? 'PATCH' : 'POST'; // ✨ ใช้ PATCH ถ้าเป็นการแก้ไข
+
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
+    const response = await fetch(url, {
+      method: method,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': SECRET_TOKEN // ส่งรหัสลับไปตรวจที่ Backend
+        'Authorization': SECRET_TOKEN
       },
       body: JSON.stringify({ title, content })
     });
 
     if (!response.ok) {
-      // ดักจับ Error เช่น 401 Unauthorized [cite: 29, 40]
       const errData = await response.json();
-      alert(`บันทึกไม่สำเร็จ: ${errData.error || response.statusText}`);
+      alert(`ดำเนินการไม่สำเร็จ: ${errData.error || response.statusText}`);
       return;
     }
 
-    // ถ้าผ่าน ให้ดึงข้อมูลโน้ตใหม่มาแสดง แล้วปิดป๊อปอัป
+    // เมื่อสำเร็จ ให้รีโหลดข้อมูลใหม่ (ล้างหน้าจอแล้ววาดใหม่)
     await loadNotes();
     closeNoteDialog();
+    editingNoteId = null; // รีเซ็ต ID หลังจากเซฟเสร็จ
 
   } catch (error) {
     console.error('Error:', error);

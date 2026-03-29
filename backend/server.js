@@ -1,64 +1,127 @@
 const express = require('express');
-const cors = require('cors'); // 1. นำเข้า CORS
+const cors = require('cors');
 require('dotenv').config();
 
-const app = express();
+const fs = require('fs');
+const path = require('path');
+const DB_PATH = path.join(__dirname, 'notes.json');
 
-app.use(cors()); // 2. เปิดใช้งาน CORS เพื่อไม่ให้ Frontend โดนบล็อก
+// ฟังก์ชันสำหรับ Backup ข้อมูลลง JSON
+const backupToJSON = async () => {
+    try {
+        const response = await fetch(POCKETHOST_URL, {
+            headers: { 'Authorization': AUTH_HEADER }
+        });
+        const data = await response.json();
+        fs.writeFileSync(DB_PATH, JSON.stringify(data.items || [], null, 2));
+        console.log("📂 Backup to JSON successful");
+    } catch (err) {
+        console.error("❌ Backup failed", err);
+    }
+};
+
+const app = express();
+app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-const SECRET_TOKEN = process.env.SECRET_TOKEN; // ดึงคีย์ลับจากไฟล์ .env
+const SECRET_TOKEN = process.env.SECRET_TOKEN; 
 
-// จำลองฐานข้อมูลด้วย Array (ถ้าปิดเซิร์ฟเวอร์ข้อมูลจะหายไป)
-let notes = [];
+const POCKETHOST_URL = 'https://app-tracking.pockethost.io/api/collections/notes/records';
+const AUTH_HEADER = 'Bearer 20260301eink'; // รหัสผ่านตามตัวอย่างอาจารย์
 
-// --- สร้าง API Endpoints ตามโจทย์ ---
-
-// 1. GET /api/notes: ส่งข้อมูลโน้ตทั้งหมดกลับไป (JSON) [cite: 26]
-app.get('/api/notes', (req, res) => {
-    res.status(200).json(notes); // [cite: 29]
-});
-
-// ฟังก์ชันด่านตรวจ (Middleware) สำหรับเช็ค SECRET TOKEN ก่อนให้เพิ่มหรือลบข้อมูล [cite: 24, 27, 28]
+// Middleware ตรวจรหัส SECRET_TOKEN (สำหรับ POST, PATCH, DELETE)
 const authenticate = (req, res, next) => {
-    // ดึงค่า Authorization จาก Header
-    const authHeader = req.headers.authorization;
-    
-    if (authHeader === SECRET_TOKEN) {
-        next(); // รหัสผ่านตรงกัน ปล่อยให้ไปทำคำสั่งต่อไป
+    if (req.headers.authorization === SECRET_TOKEN) {
+        next(); 
     } else {
-        // รหัสผิด ส่ง HTTP Status 401 Unauthorized กลับไป [cite: 29]
         res.status(401).json({ error: 'Unauthorized: รหัสความลับไม่ถูกต้อง!' }); 
     }
 };
 
-// 2. POST /api/notes: สร้างโน้ตใหม่ (ต้องผ่านด่านตรวจ authenticate ก่อน) [cite: 27]
-app.post('/api/notes', authenticate, (req, res) => {
+// 1. List/Search (GET) - ดึงข้อมูลทั้งหมด
+app.get('/api/notes', async (req, res) => {
+    try {
+        const response = await fetch(POCKETHOST_URL, {
+            headers: { 'Authorization': AUTH_HEADER }
+        });
+        const data = await response.json();
+        res.status(200).json(data.items || []); 
+    } catch (error) {
+        res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลได้' });
+    }
+});
+
+// 2. View (GET by id) - ดูโน้ตตัวเดียวตาม ID ✨ (โจทย์ต้องการข้อนี้เพิ่ม)
+app.get('/api/notes/:id', async (req, res) => {
+    try {
+        const response = await fetch(`${POCKETHOST_URL}/${req.params.id}`, {
+            headers: { 'Authorization': AUTH_HEADER }
+        });
+        const data = await response.json();
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(404).json({ error: 'ไม่พบโน้ตนี้' });
+    }
+});
+
+// 3. Create (POST) - สร้างโน้ตใหม่
+app.post('/api/notes', authenticate, async (req, res) => {
     const { title, content } = req.body;
-    
-    // สร้างออบเจ็กต์โน้ตใหม่
-    const newNote = {
-        id: Date.now().toString(), // สร้าง ID อัตโนมัติจากเวลา
-        title: title || 'Untitled',
-        content: content || ''
-    };
-    
-    notes.unshift(newNote); // ดันโน้ตใหม่ไปไว้บนสุดของ Array
-    res.status(201).json(newNote); // ส่งสถานะ 201 Created [cite: 29]
+    try {
+        const response = await fetch(POCKETHOST_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': AUTH_HEADER,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                title: title || "No Title", 
+                content: content || "",
+                user_id: 2 
+            })
+        });
+        const result = await response.json();
+        res.status(201).json(result); 
+    } catch (error) {
+        res.status(500).json({ error: 'สร้างโน้ตไม่สำเร็จ' });
+    }
 });
 
-// 3. DELETE /api/notes/:id: ลบโน้ต (ต้องผ่านด่านตรวจ authenticate) [cite: 28]
-app.delete('/api/notes/:id', authenticate, (req, res) => {
-    const noteId = req.params.id;
-    // กรองโน้ตตัวที่ ID ตรงกันออกไป
-    notes = notes.filter(note => note.id !== noteId);
-    res.status(200).json({ message: 'ลบโน้ตสำเร็จ' }); // [cite: 29]
+// 4. Update (PATCH) - แก้ไขข้อมูลโน้ต ✨ (โจทย์ต้องการข้อนี้เพิ่ม)
+app.patch('/api/notes/:id', authenticate, async (req, res) => {
+    const { title, content } = req.body;
+    try {
+        const response = await fetch(`${POCKETHOST_URL}/${req.params.id}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': AUTH_HEADER,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title, content })
+        });
+        const result = await response.json();
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'แก้ไขไม่สำเร็จ' });
+    }
 });
 
-// Route ทดสอบเริ่มต้น
+// 5. Delete (DELETE) - ลบโน้ต
+app.delete('/api/notes/:id', authenticate, async (req, res) => {
+    try {
+        const response = await fetch(`${POCKETHOST_URL}/${req.params.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': AUTH_HEADER }
+        });
+        res.status(200).json({ message: 'ลบโน้ตสำเร็จ' });
+    } catch (error) {
+        res.status(500).json({ error: 'ลบไม่สำเร็จ' });
+    }
+});
+
 app.get('/', (req, res) => {
-    res.send('SecureNote Backend is running!');
+    res.send('SecureNote Backend is running with Full CRUD on PocketHost!');
 });
 
 app.listen(PORT, () => {
