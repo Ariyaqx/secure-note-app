@@ -1,7 +1,7 @@
 let notes = []
 let editingNoteId = null
 
-const API_URL = 'http://localhost:3000/api/notes';
+const API_URL = 'https://secure-note-app-rust.vercel.app/api/notes';
 const SECRET_TOKEN = 'my_super_secret_token_12345'; // ต้องตรงกับในไฟล์ .env ของ Backend
 
 async function loadNotes() {

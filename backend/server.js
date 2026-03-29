@@ -82,6 +82,9 @@ app.post('/api/notes', authenticate, async (req, res) => {
             })
         });
         const result = await response.json();
+        
+        await backupToJSON();
+
         res.status(201).json(result); 
     } catch (error) {
         res.status(500).json({ error: 'สร้างโน้ตไม่สำเร็จ' });
@@ -101,6 +104,9 @@ app.patch('/api/notes/:id', authenticate, async (req, res) => {
             body: JSON.stringify({ title, content })
         });
         const result = await response.json();
+
+        await backupToJSON();
+
         res.status(200).json(result);
     } catch (error) {
         res.status(500).json({ error: 'แก้ไขไม่สำเร็จ' });
@@ -110,10 +116,13 @@ app.patch('/api/notes/:id', authenticate, async (req, res) => {
 // 5. Delete (DELETE) - ลบโน้ต
 app.delete('/api/notes/:id', authenticate, async (req, res) => {
     try {
-        const response = await fetch(`${POCKETHOST_URL}/${req.params.id}`, {
+        await fetch(`${POCKETHOST_URL}/${req.params.id}`, {
             method: 'DELETE',
             headers: { 'Authorization': AUTH_HEADER }
         });
+
+        await backupToJSON();
+
         res.status(200).json({ message: 'ลบโน้ตสำเร็จ' });
     } catch (error) {
         res.status(500).json({ error: 'ลบไม่สำเร็จ' });

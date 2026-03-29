@@ -40,3 +40,28 @@
 
 **คำตอบ:** * **เหตุผลที่เก็บใน Backend `.env`:** เราเก็บ `SECRET_TOKEN` ไว้ในไฟล์ `.env` ที่ฝั่ง Backend และนำไปเพิกเฉย (Ignore) ไว้ในไฟล์ `.gitignore` เพื่อแยกข้อมูลความลับออกจากโค้ดหลัก (Source Code) ทำให้ข้อมูลนี้จะอยู่บนเซิร์ฟเวอร์ที่ปลอดภัยเท่านั้น และจะไม่หลุดรอดไปอยู่ในระบบ Version Control (เช่น GitHub)
 * **ถ้าเอาไปไว้ที่ Frontend จะเกิดอะไรขึ้น?:** โค้ดทั้งหมดของ Frontend จะถูกดาวน์โหลดไปรันบนเว็บเบราว์เซอร์ของผู้ใช้งาน หากเราเก็บ `SECRET_TOKEN` ไว้ในโค้ดฝั่งหน้าบ้าน ผู้ใช้ทุกคนสามารถกดดู Source Code หรือเปิดเครื่องมือ Developer Tools (F12) เพื่อขโมยรหัสนั้นไปใช้ยิง API (สร้างหรือลบข้อมูล) ได้อย่างอิสระ ทำให้ระบบรักษาความปลอดภัยไร้ความหมายทันที
+
+## 🌟 Bonus Features Completed
+
+**1. Loading State (+5 Points)**
+- เพิ่มแอนิเมชันและข้อความ "กำลังโหลดข้อมูลโน้ตของคุณ..." ระหว่างที่รอข้อมูลจาก API เพื่อประสบการณ์การใช้งาน (UX) ที่ดีขึ้น
+
+**2. Full CRUD (Create, Read, Update, Delete) with PocketHost (+15 Points)**
+- เชื่อมต่อ Backend เข้ากับ PocketHost (BaaS) สำเร็จ
+- รองรับการทำงานครบทุกเส้นทาง:
+  - `GET /api/notes`: ดึงข้อมูลทั้งหมด
+  - `GET /api/notes/:id`: ดูข้อมูลรายตัว
+  - `POST /api/notes`: สร้างใหม่ (แนบ Token)
+  - `PATCH /api/notes/:id`: แก้ไขข้อมูล (แนบ Token)
+  - `DELETE /api/notes/:id`: ลบข้อมูล (แนบ Token)
+
+**3. Data Persistence (+10 Points)**
+- เพิ่มระบบสำรองข้อมูล (Backup) จาก PocketHost ลงไฟล์ `notes.json` อัตโนมัติ ทุกครั้งที่มีการ POST, PATCH หรือ DELETE ทำให้ข้อมูลปลอดภัยแม้ Server จะถูก Restart
+
+**4. Cloud Deployment (+10 Points)**
+- นำ Backend ไป Deploy ไว้บน **Vercel** สำเร็จ (รองรับ HTTPS)
+- **ขั้นตอนการทำ (Deployment Process):**
+  1. สร้างไฟล์ `vercel.json` เพื่อกำหนด Routing สำหรับ Express.js
+  2. เชื่อมต่อ GitHub Repository เข้ากับระบบของ Vercel
+  3. ตั้งค่า Environment Variable (`SECRET_TOKEN`) ในหน้า Dashboard เพื่อความปลอดภัย
+  4. นำ URL ที่ได้จาก Vercel ไปเชื่อมต่อกับฝั่ง Frontend (`app.js`) 
