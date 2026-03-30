@@ -9,6 +9,10 @@ A lightweight, secure full-stack web application that allows authorized users to
 - **Security:** Token Authorization for secure API access.
 - **Cloud Deployment (+Bonus):** Backend deployed on Vercel.
 
+## 🌐 Live Demo
+- **Frontend (Web App):** `https://secure-note-app-frontend.vercel.app/`
+- **Backend API:** `https://secure-note-app-rust.vercel.app/api/notes`
+
 ## 📁 Project Structure
 ```text
 /secure-note-app
