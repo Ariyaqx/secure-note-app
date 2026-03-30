@@ -59,9 +59,7 @@
 - เพิ่มระบบสำรองข้อมูล (Backup) จาก PocketHost ลงไฟล์ `notes.json` อัตโนมัติ ทุกครั้งที่มีการ POST, PATCH หรือ DELETE ทำให้ข้อมูลปลอดภัยแม้ Server จะถูก Restart
 
 **4. Cloud Deployment (+10 Points)**
-- นำ Backend ไป Deploy ไว้บน **Vercel** สำเร็จ (รองรับ HTTPS)
-- **ขั้นตอนการทำ (Deployment Process):**
-  1. สร้างไฟล์ `vercel.json` เพื่อกำหนด Routing สำหรับ Express.js
-  2. เชื่อมต่อ GitHub Repository เข้ากับระบบของ Vercel
-  3. ตั้งค่า Environment Variable (`SECRET_TOKEN`) ในหน้า Dashboard เพื่อความปลอดภัย
-  4. นำ URL ที่ได้จาก Vercel ไปเชื่อมต่อกับฝั่ง Frontend (`app.js`) 
+- นำแอปพลิเคชันทั้ง **Backend และ Frontend** ไป Deploy ไว้บน Cloud ของ **Vercel** สำเร็จเป็นที่เรียบร้อย (รองรับ HTTPS อัตโนมัติทั้งระบบ)
+- **กระบวนการ Deploy ฝั่ง Backend:** สร้างไฟล์ `vercel.json` เพื่อกำหนด Routing สำหรับ Express.js ทำการเชื่อมต่อ GitHub และตั้งค่า Environment Variable (`SECRET_TOKEN`) ในหน้า Dashboard ของ Vercel เพื่อป้องกันข้อมูลความลับรั่วไหล
+- **กระบวนการ Deploy ฝั่ง Frontend:** นำโฟลเดอร์ `frontend` ขึ้น Vercel โดยแยกเป็นอีกหนึ่งโปรเจกต์
+- **กระบวนการเชื่อมต่อระบบ:** นำ URL ของ Backend API ที่ได้จาก Vercel ไปอัปเดตใส่ตัวแปร `API_URL` ในไฟล์ `app.js` (ฝั่งหน้าบ้าน) ทำให้ทั้งสองระบบสามารถทำงานร่วมกันบนอินเทอร์เน็ตได้อย่างสมบูรณ์แบบ
